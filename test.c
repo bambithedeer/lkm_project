@@ -6,8 +6,6 @@
 #include <linux/netlink.h>
 #include <linux/vmalloc.h>
 
-static struct sock *socket;
-
 typedef struct key_value{
 	int key;
 	int value;
@@ -15,10 +13,24 @@ typedef struct key_value{
 	struct key_value * next;
 } key_value;
 
+static struct sock *socket;
+static struct key_value store;
+
 static void callback(struct sk_buff *sockBuff){
-	key_value * received = (key_value *)sockBuff->data;
-	printk(KERN_NOTICE "TEST_LKM -- Message recieved\n");
-	printk(KERN_NOTICE "KEY: %d, VALUE: %d\n", received->key, received->value);
+	struct key_value * received = (key_value *)sockBuff->data;
+	struct key_value * curr = &store;
+
+	printk(KERN_NOTICE "\n");
+	printk(KERN_NOTICE "TEST_LKM -- Message recieved with key = %d and value = %d\n", received->key, received->value);
+	printk(KERN_NOTICE "\n");
+
+
+	curr = &store;
+	while (curr != NULL){
+		printk(KERN_NOTICE "key = %d and value = %d\n", curr->key, curr->value);
+		curr = curr->next;
+	}
+	return;
 }
 
 static int __init wasLoaded(void){
@@ -26,6 +38,11 @@ static int __init wasLoaded(void){
 	struct netlink_kernel_cfg cfg = {
 		.input = callback,
 	};
+
+	store.key = 0;
+	store.value = 0;
+	store.next = &store;
+	store.prev = &store;
 
 	socket = netlink_kernel_create(&init_net, 20, &cfg);
 
