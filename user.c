@@ -1,4 +1,5 @@
 #include <sys/socket.h>
+#include <linux/list.h>
 #include <linux/netlink.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,15 +9,14 @@
 typedef struct key_value{
 	int key;
 	int value;
-	struct key_value * prev;
-	struct key_value * next;
+	int size;
+	struct list_head hdr;
 } key_value;
 
 int main(int argc, char ** argv)
 {
 	if (argc == 3){
-	  key_value msg = {atoi(argv[1]), atoi(argv[2]), NULL, NULL};
-		key_value * msgPtr  = &msg;
+	  key_value msg = {atoi(argv[1]), atoi(argv[2]), 0, NULL};
 	  struct sockaddr_nl src;
 	  printf("User started\n");
 
@@ -33,7 +33,7 @@ int main(int argc, char ** argv)
 	  src.nl_pid = getpid();
 
 	  bind(sockID, (struct sockaddr*)&src, sizeof(src));
-	  send(sockID, msgPtr, sizeof(msgPtr), MSG_CONFIRM);
+	  send(sockID, &msg, sizeof(&msg), MSG_CONFIRM);
 	}
 	else{
 		printf("Usage: ./user key value\n");
